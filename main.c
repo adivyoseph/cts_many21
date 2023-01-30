@@ -18,8 +18,8 @@
 
 //My defines
 #define PRIV_CORES_MAX          32   //24 for workstation
-#define SAMPLES_MAX             1024
-#define TX_DELAY                9000
+#define SAMPLES_MAX             32
+#define TX_DELAY                100000
 
 #ifndef CACHELINE_SIZE
 #define CACHELINE_SIZE 64
@@ -242,7 +242,7 @@ int main(int argc, char **argv){
 
 
      //wait for threadTx done
-     /**/
+     /*
      do {
          for (i = 2, j = 2;  i < i_threadsTx + 3; i++) {
              if (contexts[i].done) {
@@ -251,13 +251,13 @@ int main(int argc, char **argv){
          }         
      } while (j < i_threadsTx + 3);
      printf("Tx cores done %d\n", j);
-
+*/
      sleep(1);
 
      for (i = 0; i < SAMPLES_MAX; i++) {
          printf("%04d  : ", i);
          for (j = 2; j < i_threadsTx + 3; j++) {
-             printf("%lld ", stats[i].uidSamples[j][0]);
+             printf("%lld ", stats[j].uidSamples[i][0]);
          }
          printf("\n");
      }
@@ -314,19 +314,13 @@ void *th_funcTx(void *p_arg){
         do {
                     work1 =  __rdtsc();
         }while (work > work1);
-        if ((work1 - prev) > (TX_DELAY + 100)) {
-            work = work1 + (unsigned long long int)TX_DELAY;
-            prev = work1;
-        }
-        else {
             p_msg->uid = work1;
             work = work1 + (unsigned long long int)TX_DELAY;
-            prev = work1;
             this->uidSamples[i][0] = work1;
             i++;
-        }
 
         if (i >= SAMPLES_MAX) {
+            this->done = 1;
             while (1) {
             }
         }
@@ -376,8 +370,8 @@ void *th_funcRx(void *p_arg){
             tsc = __rdtsc();
             uidOld[i] = g_msgs[i].uid;
             if (stats[i].statsIndex < SAMPLES_MAX) {
-                stats[i].uidSamples[this->statsIndex][0] = uidOld[1];
-                stats[i].uidSamples[this->statsIndex][1] = tsc;
+                stats[i].uidSamples[stats[i].statsIndex][0] = uidOld[1];
+                stats[i].uidSamples[stats[i].statsIndex][1] = tsc;
                 stats[i].statsIndex++;
             }
         }
